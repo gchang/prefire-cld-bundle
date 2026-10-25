@@ -30,7 +30,14 @@ The one link the code still needs is to the built PCRTM, which `PREFIRE_CLD/dist
 
 ## Software and data
 
-- Python 3.10 with numpy 1.26, scipy 1.11, netcdf4 1.6 and h5py 3.10 from conda-forge (the versions in `PREFIRE_CLD/conda_env.list`; `pyhdf`, also listed there, is not imported by the run), git (to record the code versions in the product), and a Fortran compiler with make (conda-forge `gfortran` and `make` work).
+- Python 3.10 with numpy 1.26, scipy 1.11, netcdf4 1.6 and h5py 3.10 from conda-forge (the versions in `PREFIRE_CLD/conda_env.list`), git (to record the code versions in the product), gfortran and make (to build PCRTM) and unzip. `environment.yml` at the bundle root lists exactly this set; from the bundle root:
+
+  ```sh
+  conda env create -f environment.yml    # creates the conda env prefire_cld
+  conda activate prefire_cld
+  ```
+
+  `pyhdf`, also in `conda_env.list`, is not imported by the run and is left out.
 - The Makefiles of `PREFIRE_PCRTM_V3.4` and `PREFIRE_pyPCRTM` use x86-64-v3 instruction flags (AVX2, FMA). They build as they are on a current x86-64 CPU. On other CPUs (for example arm64), those flags must be removed, as the comments in both Makefiles say.
 - PCRTM coefficient tables: `PREFIRE_PCRTM_V3.4-large_ancillary_data-1.zip` (3.5 GB, MIT) from Zenodo record 16694725 (https://zenodo.org/records/16694725). 2B-CLD uses only four of its members (205 MB), the tables for PCRTM sensor 2. Extract them into a folder whose path, with a trailing `/`, is **shorter than 120 characters**: PCRTM keeps the path in a 120-character Fortran string and silently cuts off anything longer, and the run then stops with "Cannot open file" on a mangled path.
 - Spectral response functions: `PREFIRE_SRFs-v13_2024-09-15.zip` (11.6 MB, MIT) from Zenodo record 16638853 (https://zenodo.org/records/16638853), unzipped inside `PREFIRE_CLD/dist/`, which puts the two SRF files in `PREFIRE_CLD/dist/ancillary/` (the code reads them from there).

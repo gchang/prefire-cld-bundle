@@ -1,0 +1,18 @@
+# Conda environment for the PREFIRE_CLD bundle (conda-forge only). Checked on 2026-10-25 on x86-64 Linux.
+# The pins follow the versions in PREFIRE_CLD/conda_env.list, the mission's own environment, which the check
+# reproduced. pyhdf, also in that list, is left out on purpose: nothing on the run path imports it.
+# The browse-image packages of the finalization step (matplotlib, cartopy, shapely, geopandas, pandas)
+# are left out too; the README sets PRD_GEN_BASIC_ONLY=1, which skips that step.
+name: prefire_cld
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy=1.26       # PREFIRE_CLD/conda_env.list (1.26.3); also keeps numpy below 2
+  - scipy=1.11       # PREFIRE_CLD/conda_env.list (1.11.4)
+  - netcdf4=1.6      # PREFIRE_CLD/conda_env.list (1.6.5)
+  - h5py=3.10        # PREFIRE_CLD/conda_env.list (3.10.0)
+  - gfortran         # builds PCRTM and the pyPCRTM adapter
+  - make
+  - git              # determine_prdgit.py records the code versions in the product
+  - unzip            # unpacks the Zenodo ancillary data
