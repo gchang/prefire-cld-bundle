@@ -82,6 +82,8 @@ PCRTM_INPUT_DIR=/path/to/pcrtm/INPUTDIR/ python test_jacobian_run.py
 cd ../..
 ```
 
+`test_forward_run.py` now and then fails with "non-finite values detected in krad_esurf" (or `kbt_esurf`): it also checks the Jacobian arrays, which it does not request, so they hold leftover memory (`PCRTM_fwrappers.py` allocates them with `np.empty`). That is a test problem, not a build problem; run it again.
+
 ## Running one orbit
 
 The mission makes 2B-CLD in two steps: `PREFIRE_CLD` writes a raw file for the orbit, then `PREFIRE_PRD_GEN` finalizes it into the archived product (polar frames only, with the archive's metadata). From the bundle root:
@@ -113,6 +115,6 @@ python PREFIRE_PRD_GEN/dist/produce_PRD.py
 
 `PCRTM_INPUT_DIR` must end with `/`. The run is single-threaded by design. PCRTM prints about 50 lines per retrieved footprint (about 20 MB of text per orbit). `ATRACK_IDX_RANGE_0BI` can split an orbit into frame ranges run separately; step 2 then merges every raw file that starts with the `INPUT_FPATH_OR_FPREFIX` prefix.
 
-Checked on 2026-10-25 from a fresh `git clone --recurse-submodules` on x86-64 Linux with SAT1 orbit 01877 and SAT2 orbit 02040: the final files have the same structure and attributes as the official ASDC R01 2B-CLD granules (apart from the creation time and `provenance`), and retrieve exactly the same footprints (9,370 and 5,108). `cld_quality_flag` agrees on 99.96% and 99.97% of footprints, and the retrieved values agree to a median relative difference of 4e-5 to 3e-4, with the same mean cloud-top pressure (614.5 and 642.2 hPa); they are not bit-identical, because the iterative solver amplifies compiler and library rounding differences and takes a different number of iterations for about 2% of footprints. Step 1 takes about 35 minutes (SAT1) and 18 minutes (SAT2) on one core with 0.5 GB of memory; step 2 takes 2 seconds.
+Checked on 2026-10-25 from a fresh `git clone --recurse-submodules` on x86-64 Linux with SAT1 orbit 01877 and SAT2 orbit 02040: the final files have the same structure and attributes as the official ASDC R01 2B-CLD granules (apart from the creation time and `provenance`), and retrieve exactly the same footprints (9,370 and 5,108). `cld_quality_flag` agrees on 99.96% and 99.97% of footprints, and the retrieved values agree to a median relative difference of 4e-5 to 3e-4, with the same mean cloud-top pressure (614.5 and 642.2 hPa); they are not bit-identical, because the iterative solver amplifies compiler and library rounding differences and takes a different number of iterations for about 2% of footprints. Step 1 takes 27 to 35 minutes (SAT1, depending on machine load) and 18 minutes (SAT2) on one core with 0.5 GB of memory; step 2 takes 1 to 2 seconds. Running SAT2 as two frame ranges (`0:5600` and `5601:END`) and merging them in step 2 gave a final file identical in every variable.
 
 The author's own test, `PREFIRE_CLD/test/run.sh`, runs step 1 on 101 frames of each of two orbits. It expects PCRTM and its tables under `PREFIRE_CLD/dist/subpackages/`, reads its inputs from `PREFIRE_CLD/test/inputs/`, and calls `determine_prdgit.py` itself.
