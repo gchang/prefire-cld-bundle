@@ -42,6 +42,11 @@ The one link the code still needs is to the built PCRTM, which `PREFIRE_CLD/dist
 From the bundle root. The build records these absolute paths, and `determine_prdgit.py` checks that the two records agree, so build in the place the bundle will run from (rebuild after moving it):
 
 ```sh
+# determine_prdgit.py looks for a .git folder in each package, but git gives submodules a .git file, and the
+# product would then record "unknown" code versions. Move each submodule's git folder into the submodule:
+git submodule foreach -q 'd=$(git rev-parse --absolute-git-dir); git config --unset core.worktree; rm .git; mv "$d" .git'
+
+unset MAKEFLAGS    # build serially: PCRTM's makefiles break under parallel make (see below)
 B=$PWD
 cd $B/PREFIRE_PCRTM_V3.4/GENERIC
 make gfortran LIBRARY_DIR=$B/PREFIRE_PCRTM_V3.4/lib INCLUDE_DIR=$B/PREFIRE_PCRTM_V3.4/include
@@ -58,7 +63,7 @@ ln -s ../../PREFIRE_PCRTM_V3.4 PREFIRE_CLD/source/PREFIRE_PCRTM_V3.4
 (cd PREFIRE_CLD/dist && unzip /path/to/PREFIRE_SRFs-v13_2024-09-15.zip)
 ```
 
-Pass `LIBRARY_DIR` and `INCLUDE_DIR` on the command line as shown: their defaults in `GENERIC/makefile` point into the home folder. The first `make gfortran` prints a series of "Error 127 (ignored)" lines before the real compile; they are harmless. The build gives `PREFIRE_PCRTM_V3.4/lib/libPCRTM.a` and `PREFIRE_pyPCRTM/pyPCRTM/PCRTM_wrapper_module.so`, all ignored by the submodules' `.gitignore` files.
+Pass `LIBRARY_DIR` and `INCLUDE_DIR` on the command line as shown: their defaults in `GENERIC/makefile` point into the home folder. Build serially: `GENERIC/SRC/make.dependencies` does not match the object names in `GENERIC/SRC/Makefile`, so with `make -j` (or `-j` in `MAKEFLAGS`) Fortran modules can be compiled before the modules they use. `GENERIC/makefile` does not pass such a failure on, so it shows up only later, when the pyPCRTM build stops with "Cannot open module file 'init_pcrtm.mod'". A good build leaves 23 `.mod` files and `build_provenance.txt` in `PREFIRE_PCRTM_V3.4/include`. The first `make gfortran` prints a series of "Error 127 (ignored)" lines before the real compile; they are harmless. The build gives `PREFIRE_PCRTM_V3.4/lib/libPCRTM.a` and `PREFIRE_pyPCRTM/pyPCRTM/PCRTM_wrapper_module.so`, all ignored by the submodules' `.gitignore` files.
 
 Optional check of the build, PREFIRE_pyPCRTM's own tests (each prints "Success!"):
 
@@ -100,5 +105,7 @@ python PREFIRE_PRD_GEN/dist/produce_PRD.py
 ```
 
 `PCRTM_INPUT_DIR` must end with `/`. The run is single-threaded by design. PCRTM prints about 50 lines per retrieved footprint (about 20 MB of text per orbit). `ATRACK_IDX_RANGE_0BI` can split an orbit into frame ranges run separately; step 2 then merges every raw file that starts with the `INPUT_FPATH_OR_FPREFIX` prefix.
+
+Checked on 2026-10-25 from a fresh `git clone --recurse-submodules` on x86-64 Linux with SAT1 orbit 01877 and SAT2 orbit 02040: the final files have the same structure and attributes as the official ASDC R01 2B-CLD granules (apart from the creation time and `provenance`), and retrieve exactly the same footprints (9,370 and 5,108). `cld_quality_flag` agrees on 99.96% and 99.97% of footprints, and the retrieved values agree to a median relative difference of 4e-5 to 3e-4, with the same mean cloud-top pressure (614.5 and 642.2 hPa); they are not bit-identical, because the iterative solver amplifies compiler and library rounding differences and takes a different number of iterations for about 2% of footprints. Step 1 takes about 35 minutes (SAT1) and 18 minutes (SAT2) on one core with 0.5 GB of memory; step 2 takes 2 seconds.
 
 The author's own test, `PREFIRE_CLD/test/run.sh`, runs step 1 on 101 frames of each of two orbits. It expects PCRTM and its tables under `PREFIRE_CLD/dist/subpackages/`, reads its inputs from `PREFIRE_CLD/test/inputs/`, and calls `determine_prdgit.py` itself.
