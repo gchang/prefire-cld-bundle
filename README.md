@@ -30,7 +30,7 @@ The one link the code still needs is to the built PCRTM, which `PREFIRE_CLD/dist
 
 ## Software and data
 
-- Python 3.10 with numpy 1.26, scipy 1.11, netcdf4 1.6 and h5py 3.10 from conda-forge (the versions in `PREFIRE_CLD/conda_env.list`), git (to record the code versions in the product), gfortran and make (to build PCRTM) and unzip. `environment.yml` at the bundle root lists exactly this set; from the bundle root:
+- Python 3.10 with numpy 1.26, scipy 1.11, netcdf4 1.6 and h5py 3.10 from conda-forge (the versions in `PREFIRE_CLD/conda_env.list`), git (to record the code versions in the product), gfortran, make and binutils (to build PCRTM; its makefile calls a bare `ar`, which conda-forge's gfortran does not provide) and unzip. `environment.yml` at the bundle root lists exactly this set; from the bundle root:
 
   ```sh
   conda env create -f environment.yml    # creates the conda env prefire_cld
