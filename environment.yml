@@ -14,5 +14,6 @@ dependencies:
   - h5py=3.10        # PREFIRE_CLD/conda_env.list (3.10.0)
   - gfortran         # builds PCRTM and the pyPCRTM adapter
   - make
+  - binutils         # PCRTM's GENERIC/SRC/Makefile calls a bare ar, which conda-forge gfortran does not provide
   - git              # determine_prdgit.py records the code versions in the product
   - unzip            # unpacks the Zenodo ancillary data
